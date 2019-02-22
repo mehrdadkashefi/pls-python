@@ -7,10 +7,21 @@ import scipy.io as sio
 import numpy as np
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, explained_variance_score,r2_score
+from math import sqrt
+import statistics as st
+import matplotlib.pyplot as plt
+
+#Costom loss coefficient of correlation (r) and
+def LossR(yTrue,yPred):
+    Res = sum((yTrue - np.mean(yTrue))* (yPred - np.mean(yPred))) / sqrt(sum((yTrue - np.mean(yTrue))**2)* sum((yPred - np.mean(yPred))**2))
+    return Res
 
 # Loading Data
-mat = sio.loadmat('/home/mehrdad/Datasets/rat_force/rat1.mat')
+try:
+    mat = sio.loadmat('/home/mehrdad/Datasets/rat_force/rat1.mat')
+except FileNotFoundError:
+    mat = sio.loadmat('/Users/mehrdadkashefi/Datasets/rat_force/rat1.mat')
 force = mat['Force_new_pre']
 lfp = mat['LFP_new_pre']
 
@@ -22,20 +33,20 @@ lag = 10
 num_fold = 10
 
 # Shuffling trials
-index = np.random.permutation(lfp.shape[2])  # Num trials ~ 74
-lfp = lfp[:, :, index]
-force = force[index, :]
+# index = np.random.permutation(lfp.shape[2])  # Num trials ~ 74
+# lfp = lfp[:, :, index]
+# force = force[index, :]
 
 # Filtering below 1 Hz
 [b, a] = sig.butter(filter_degree, 1/(fs/2), btype='high', analog=False, output='ba')
 # Filtering and appling commen average filter CAR
 for trial in range(lfp.shape[2]):  # Over trials
-    lfp[:, :, trial] = sig.filtfilt(b, a, lfp[:, :, trial], axis=1)
+    lfp[:, :, trial] = sig.filtfilt(b, a, lfp[:, :, trial], axis=1, padtype='odd', method='pad', padlen=3*(max(len(a),len(b))-1))
     channel_mean = np.mean(lfp[:, :, trial], 0)
     for channel in range(lfp.shape[0]):  # loop over channels  ---> can improve
         lfp[channel, :, trial] = lfp[channel, :, trial] - channel_mean
 
-lfp = lfp.reshape(lfp.shape[0], lfp.shape[1]*lfp.shape[2])  # This part should be checked
+lfp = lfp.reshape(lfp.shape[0], lfp.shape[1]*lfp.shape[2], order='F')  # This part should be checked
 # force = force.T
 force = force.reshape(force.shape[0]*force.shape[1])
 
@@ -44,12 +55,12 @@ num_features = (lag+1)*lfp.shape[0]
 freq_bands = np.array([[1, 4], [4, 8], [8, 12], [12, 30], [30, 60], [60, 120], [120, 200], [200, 400]])
 feature_allband = np.zeros((2210, num_features*freq_bands.shape[0]))  # Num point with lag 10 ---> 2210
 for band in range(freq_bands.shape[0]):
-    if band == 1:
+    if band == 0:
         [b, a] = sig.butter(filter_degree, freq_bands[band, 1]/(fs/2), btype='low', analog=False, output='ba')
     else:
         [b, a] = sig.butter(filter_degree, [freq_bands[band, 0]/(fs / 2), freq_bands[band, 1]/(fs / 2)], btype='band', analog=False, output='ba')
 
-    feature = sig.filtfilt(b, a, lfp, axis=1)
+    feature = sig.filtfilt(b, a, lfp, axis=1,padtype='odd',method='pad',padlen=3*(max(len(a), len(b)) -1))
     feature = np.abs(feature)
 
     for channel in range(feature.shape[0]):
@@ -66,7 +77,7 @@ for band in range(freq_bands.shape[0]):
     for time in range(feature.shape[0]-lag):
         feature_tot[time, :, :] = feature[time:time+lag+1, :]
 
-    feature_tot = feature_tot.reshape((feature_tot.shape[0], feature_tot.shape[1]*feature_tot.shape[2]))  # Check the reshape later
+    feature_tot = feature_tot.reshape((feature_tot.shape[0], feature_tot.shape[1]*feature_tot.shape[2]), order='F')  # Check the reshape later
 
     feature_allband[:, num_features*band:num_features*band + num_features] = feature_tot
     print("Calculatring for frequency band ", band+1, " for subject ", 1)
@@ -97,13 +108,13 @@ for fold_count in range(num_fold):
     prediction = pls.predict(feature_allband_test)
 
     # Calculate scores
-    score = r2_score(force_test, prediction)
-    mse = mean_squared_error(force_test, prediction)
+    score = explained_variance_score(force_test, prediction)
+    # Corr = LossR(force_test, prediction)
 
     print("=============================")
     print("predictions for fold ", fold_count+1)
     print("r2 score is ", score)
-    print("mse score is ", mse)
+   # print("Corrolation score is ", Corr)
 
 
 print('Hello')

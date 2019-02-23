@@ -7,17 +7,23 @@ import scipy.io as sio
 import numpy as np
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.metrics import mean_squared_error, explained_variance_score,r2_score
-from math import sqrt
-import statistics as st
-import matplotlib.pyplot as plt
 
-#Costom loss coefficient of correlation (r) and
-def LossR(yTrue,yPred):
-    Res = sum((yTrue - np.mean(yTrue))* (yPred - np.mean(yPred))) / sqrt(sum((yTrue - np.mean(yTrue))**2)* sum((yPred - np.mean(yPred))**2))
+
+# Costom loss coefficient of correlation (r) and
+
+def LossCorr(yTrue, yPred):
+    Res = np.dot((yTrue - np.mean(yTrue)).T, yPred - np.mean(yPred)) / (np.std(yTrue) * np.std(yPred) * len(yTrue))
+    return Res
+
+def LossR2(yTrue, yPred):
+    yPred = np.reshape(yPred, (len(yPred), 1))
+    yTrue = np.reshape(yTrue, (len(yTrue), 1))
+    Res = np.var((yTrue-yPred), ddof=1)/np.var(yTrue, ddof=1)
     return Res
 
 # Loading Data
+
+
 try:
     mat = sio.loadmat('/home/mehrdad/Datasets/rat_force/rat1.mat')
 except FileNotFoundError:
@@ -60,7 +66,7 @@ for band in range(freq_bands.shape[0]):
     else:
         [b, a] = sig.butter(filter_degree, [freq_bands[band, 0]/(fs / 2), freq_bands[band, 1]/(fs / 2)], btype='band', analog=False, output='ba')
 
-    feature = sig.filtfilt(b, a, lfp, axis=1,padtype='odd',method='pad',padlen=3*(max(len(a), len(b)) -1))
+    feature = sig.filtfilt(b, a, lfp, axis=1, padtype='odd', method='pad', padlen=3*(max(len(a), len(b)) - 1))
     feature = np.abs(feature)
 
     for channel in range(feature.shape[0]):
@@ -108,13 +114,11 @@ for fold_count in range(num_fold):
     prediction = pls.predict(feature_allband_test)
 
     # Calculate scores
-    score = explained_variance_score(force_test, prediction)
-    # Corr = LossR(force_test, prediction)
+    R2_score = LossR2(force_test, prediction)
+    Corr = LossCorr(force_test, prediction)
 
     print("=============================")
     print("predictions for fold ", fold_count+1)
-    print("r2 score is ", score)
-   # print("Corrolation score is ", Corr)
+    print("r2 score is ", R2_score)
+    print("Corrolation score is ", Corr)
 
-
-print('Hello')

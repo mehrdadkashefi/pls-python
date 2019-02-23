@@ -7,7 +7,12 @@ import scipy.io as sio
 import numpy as np
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
-
+from MyMLP import *
+import keras
+from keras.layers import Dense
+from keras.models import Sequential
+from keras.activations import linear
+from keras.regularizers import l2
 
 # Costom loss coefficient of correlation (r) and
 
@@ -29,6 +34,7 @@ try:
 except FileNotFoundError:
     mat = sio.loadmat('/Users/mehrdadkashefi/Datasets/rat_force/rat1.mat')
 force = mat['Force_new_pre']
+force = -force
 lfp = mat['LFP_new_pre']
 
 fs = 1000
@@ -108,10 +114,19 @@ for fold_count in range(num_fold):
     force_train = force[index_train]
     force_test = force[index_test]
 
-    pls = PLSRegression(n_components=10)
-    pls.fit(feature_allband_train, force_train)
+    model = Sequential()
+    model.add(Dense(1, activation='relu',use_bias=True, input_dim=1408,kernel_regularizer=l2(0.001)))
+    model.compile(optimizer='adam',
+                  loss='mean_absolute_error')
 
-    prediction = pls.predict(feature_allband_test)
+    # Train the model, iterating on the data in batches of 32 samples
+    model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
+    prediction = model.predict(feature_allband_test)
+    # MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
+    #pls = PLSRegression(n_components=10)
+    #pls.fit(feature_allband_train, force_train)
+
+    #prediction = pls.predict(feature_allband_test)
 
     # Calculate scores
     R2_score = LossR2(force_test, prediction)
@@ -121,4 +136,7 @@ for fold_count in range(num_fold):
     print("predictions for fold ", fold_count+1)
     print("r2 score is ", R2_score)
     print("Corrolation score is ", Corr)
+    plt.plot(force_test)
+    plt.plot(prediction)
+    plt.show()
 

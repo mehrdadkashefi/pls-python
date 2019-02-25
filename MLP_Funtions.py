@@ -16,11 +16,17 @@ def relu(z):
     return z
 
 
+def relu_backward(z):
+    z[z <= 0] = 0
+    z[z > 0] = 1
+    return z
+
+
 def linear(z):
     return z
 
 
-def linear_bachward(z):
+def linear_backward(z):
     return 1
 
 
@@ -57,7 +63,8 @@ def forward_block(a_in, w, b, activation):
 
 
 def cost_function(y_prediction, y_true):
-    loss = -1*(y_true * np.log(y_prediction) + (1 - y_true) * np.log((1 - y_prediction)))
+    # loss = -1*(y_true * np.log(y_prediction) + (1 - y_true) * np.log((1 - y_prediction)))
+    loss = 0.5*((y_true-y_prediction)**2)
     cost = (1/y_prediction.shape[1]) * np.sum(loss, axis=1, keepdims=True)
     return cost
 
@@ -66,7 +73,9 @@ def backward_block(da, z, w, a_prev, activation):
     if activation == 'sigmoid':
         dz = da * sigmoid_backward(z)
     elif activation == "linear":
-        dz = da * linear_bachward(z)
+        dz = da * linear_backward(z)
+    elif activation == 'relu':
+        dz = da * relu_backward(z)
 
     dw = (1 / dz.shape[1]) * np.dot(dz, a_prev.T)
     db = (1 / dz.shape[1]) * np.sum(dz, axis=1, keepdims=True)

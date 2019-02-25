@@ -7,7 +7,7 @@ import scipy.io as sio
 import numpy as np
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
-from MyMLP import *
+from mlp_mse import *
 import keras
 from keras.layers import Dense
 from keras.models import Sequential
@@ -113,7 +113,7 @@ for fold_count in range(num_fold):
     # force train-test separation
     force_train = force[index_train]
     force_test = force[index_test]
-
+    """"
     model = Sequential()
     model.add(Dense(1, activation='relu',use_bias=True, input_dim=1408,kernel_regularizer=l2(0.001)))
     model.compile(optimizer='adam',
@@ -122,7 +122,10 @@ for fold_count in range(num_fold):
     # Train the model, iterating on the data in batches of 32 samples
     model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
     prediction = model.predict(feature_allband_test)
-    # MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
+    """
+    prediction = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
+    prediction = prediction.T
+    #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
     #pls = PLSRegression(n_components=10)
     #pls.fit(feature_allband_train, force_train)
 

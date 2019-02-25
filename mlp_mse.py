@@ -22,6 +22,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     num_neuron = np.array([x_train.shape[0], y_train.shape[0]])
     learning_rate = 0.001
     random_initializer = 0.01
+    regularization_rate = 0.01
     num_iteration = 200
 
     [weight, bias, dW, dB] = layer_initializer(num_layer, num_neuron, random_initializer)
@@ -44,7 +45,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
 
         # Updating Weights and Biases
 
-        weight['w1'] = weight['w1'] - learning_rate * dW['dw1']
+        weight['w1'] = weight['w1'] - learning_rate * (dW['dw1'] + (regularization_rate/x_train.shape[1]) * weight['w1'])
 
         bias['b1'] = bias['b1'] - learning_rate * dB['db1']
 

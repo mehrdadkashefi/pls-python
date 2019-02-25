@@ -30,6 +30,22 @@ def linear_backward(z):
     return 1
 
 
+def my_activation(z):
+    alpha = 5
+    shift = 20
+    z = -np.log(1 + np.exp(-alpha * z - shift)) + np.log(1 + np.exp(alpha * z - shift))
+    return z
+
+
+def my_activation_backward(z):
+    alpha = 5
+    shift = 15
+    z = alpha*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + alpha*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
+    # a = z*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + z*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
+    # b = -1*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
+    return z  # , a, b
+
+
 def layer_initializer(num_layer, num_neuron, random_initializer):
 
     weight = {}
@@ -61,6 +77,10 @@ def forward_block(a_in, w, b, activation):
         a_out = linear(z)
         return a_out, z
 
+    elif activation == 'my_activation':
+        a_out = my_activation(z)
+        return a_out, z
+
 
 def cost_function(y_prediction, y_true):
     # loss = -1*(y_true * np.log(y_prediction) + (1 - y_true) * np.log((1 - y_prediction)))
@@ -76,6 +96,8 @@ def backward_block(da, z, w, a_prev, activation):
         dz = da * linear_backward(z)
     elif activation == 'relu':
         dz = da * relu_backward(z)
+    elif activation == 'my_activation':
+        dz = da * my_activation_backward(z)
 
     dw = (1 / dz.shape[1]) * np.dot(dz, a_prev.T)
     db = (1 / dz.shape[1]) * np.sum(dz, axis=1, keepdims=True)

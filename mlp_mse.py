@@ -35,13 +35,13 @@ def mlp_mse(x_train, y_train, x_test, y_test):
         Z = {}
         output = {'a0' : x_train}
 
-        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='relu')
+        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation')
         # Bach Prob
         dA = {}
 
         dA['da1'] = output['a1'] - y_train
 
-        [dW['dw1'], dB['db1'], dA['da0']] = backward_block(dA['da1'], Z['z1'], weight['w1'], output['a0'], activation='relu')
+        [dW['dw1'], dB['db1'], dA['da0']] = backward_block(dA['da1'], Z['z1'], weight['w1'], output['a0'], activation='my_activation')
 
         # Updating Weights and Biases
 
@@ -56,7 +56,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
 
         output['a0'] = x_test
 
-        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='relu')
+        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation')
 
         cost_validation[0, iteration] = cost_function(output['a1'], y_test)
         print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])

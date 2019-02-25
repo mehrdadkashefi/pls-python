@@ -5,6 +5,7 @@
 # Import libraries
 import scipy.io as sio
 import numpy as np
+import matplotlib.pylab as plt
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
 from mlp_mse import *
@@ -123,7 +124,7 @@ for fold_count in range(num_fold):
     model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
     prediction = model.predict(feature_allband_test)
     """
-    prediction = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
+    [prediction, alpha, beta] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
     prediction = prediction.T
     #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
     #pls = PLSRegression(n_components=10)
@@ -134,11 +135,11 @@ for fold_count in range(num_fold):
     # Calculate scores
     R2_score = LossR2(force_test, prediction)
     Corr = LossCorr(force_test, prediction)
-
     print("=============================")
     print("predictions for fold ", fold_count+1)
     print("r2 score is ", R2_score)
     print("Corrolation score is ", Corr)
+    print("Alpha and beta are ", alpha, beta)
     plt.plot(force_test)
     plt.plot(prediction)
     plt.show()

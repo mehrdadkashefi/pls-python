@@ -21,9 +21,13 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     num_layer = 1
     num_neuron = np.array([x_train.shape[0], y_train.shape[0]])
     learning_rate = 0.001
+    learning_rate_activation = 0.0009
     random_initializer = 0.01
     regularization_rate = 0.01
-    num_iteration = 200
+    num_iteration = 10
+
+    alpha = 5
+    beta = 15
 
     [weight, bias, dW, dB] = layer_initializer(num_layer, num_neuron, random_initializer)
     cost = np.zeros((1, num_iteration))
@@ -35,19 +39,23 @@ def mlp_mse(x_train, y_train, x_test, y_test):
         Z = {}
         output = {'a0' : x_train}
 
-        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation')
+        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation', alpha=alpha, beta=beta)
         # Bach Prob
         dA = {}
 
         dA['da1'] = output['a1'] - y_train
 
-        [dW['dw1'], dB['db1'], dA['da0']] = backward_block(dA['da1'], Z['z1'], weight['w1'], output['a0'], activation='my_activation')
+        [dW['dw1'], dB['db1'], dA['da0'], d_alpha, d_beta] = backward_block(dA['da1'], Z['z1'], weight['w1'], output['a0'], activation='my_activation',  alpha=alpha, beta=beta)
 
         # Updating Weights and Biases
 
         weight['w1'] = weight['w1'] - learning_rate * (dW['dw1'] + (regularization_rate/x_train.shape[1]) * weight['w1'])
 
         bias['b1'] = bias['b1'] - learning_rate * dB['db1']
+
+        alpha = alpha - learning_rate_activation * d_alpha
+
+        beta = beta - learning_rate_activation * d_beta
 
         cost[0, iteration] = cost_function(output['a1'], y_train)
         print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
@@ -56,11 +64,12 @@ def mlp_mse(x_train, y_train, x_test, y_test):
 
         output['a0'] = x_test
 
-        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation')
+        [output['a1'], Z['z1']] = forward_block(output['a0'], weight['w1'], bias['b1'], activation='my_activation', alpha=alpha, beta=beta)
 
         cost_validation[0, iteration] = cost_function(output['a1'], y_test)
         print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
 
+    """"
     fig, ax = plt.subplots()
     ax.plot(range(0, iteration), cost[0, 0:iteration], label='Train Cost')
     ax.plot(range(0, iteration), cost_validation[0, 0:iteration], label='Test Cost')
@@ -69,5 +78,5 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     ax.legend()
     ax.grid(False)
     plt.show()
-
-    return output['a1']
+   """
+    return output['a1'],alpha,beta

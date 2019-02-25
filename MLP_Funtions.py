@@ -30,20 +30,16 @@ def linear_backward(z):
     return 1
 
 
-def my_activation(z):
-    alpha = 5
-    shift = 20
+def my_activation(z, alpha, shift):
     z = -np.log(1 + np.exp(-alpha * z - shift)) + np.log(1 + np.exp(alpha * z - shift))
     return z
 
 
-def my_activation_backward(z):
-    alpha = 5
-    shift = 15
+def my_activation_backward(z, alpha, shift):
     z = alpha*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + alpha*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    # a = z*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + z*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    # b = -1*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    return z  # , a, b
+    a = z*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + z*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
+    b = -1*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
+    return z, a, b
 
 
 def layer_initializer(num_layer, num_neuron, random_initializer):
@@ -62,7 +58,7 @@ def layer_initializer(num_layer, num_neuron, random_initializer):
     return weight, bias, d_weight, d_bias
 
 
-def forward_block(a_in, w, b, activation):
+def forward_block(a_in, w, b, activation, alpha, beta):
     z = np.dot(w, a_in) + b
 
     if activation == "sigmoid":
@@ -78,7 +74,7 @@ def forward_block(a_in, w, b, activation):
         return a_out, z
 
     elif activation == 'my_activation':
-        a_out = my_activation(z)
+        a_out = my_activation(z, alpha, beta)
         return a_out, z
 
 
@@ -89,7 +85,7 @@ def cost_function(y_prediction, y_true):
     return cost
 
 
-def backward_block(da, z, w, a_prev, activation):
+def backward_block(da, z, w, a_prev, activation, alpha, beta):
     if activation == 'sigmoid':
         dz = da * sigmoid_backward(z)
     elif activation == "linear":
@@ -97,13 +93,18 @@ def backward_block(da, z, w, a_prev, activation):
     elif activation == 'relu':
         dz = da * relu_backward(z)
     elif activation == 'my_activation':
-        dz = da * my_activation_backward(z)
+        [z, a, b] = my_activation_backward(z, alpha, beta)
+        dz = da * z
+        d_alpha = da * z * a
+        d_beta = da * z * b
 
     dw = (1 / dz.shape[1]) * np.dot(dz, a_prev.T)
     db = (1 / dz.shape[1]) * np.sum(dz, axis=1, keepdims=True)
+    d_alpha = (1 / dz.shape[1]) * np.sum(d_alpha, axis=1, keepdims=True)
+    d_beta = (1 / dz.shape[1]) * np.sum(d_beta, axis=1, keepdims=True)
     da_prev = np.dot(w.T, dz)
 
-    return dw, db, da_prev
+    return dw, db, da_prev, d_alpha, d_beta
 
 
 def dropout(dropout_input, dropout_prob):

@@ -30,16 +30,18 @@ def linear_backward(z):
     return 1
 
 
-def my_activation(z, alpha, shift):
-    z = -np.log(1 + np.exp(-alpha * z - shift)) + np.log(1 + np.exp(alpha * z - shift))
+def my_activation(z, a1, a2, b1, b2):
+    z = -np.log(1+np.exp(a2*(-z - b2))) + np.log(1+np.exp(a1*(z - b1)))
     return z
 
 
-def my_activation_backward(z, alpha, shift):
-    z = alpha*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + alpha*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    a = z*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + z*np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    b = -1*np.exp(alpha*z - shift)/(1+np.exp(alpha*z - shift)) + np.exp(-alpha*z - shift)/(1+np.exp(-alpha*z - shift))
-    return z, a, b
+def my_activation_backward(z, a1, a2, b1, b2):
+    z = ((a1*np.exp(a1*(z - b1)))/(1+np.exp(a1*(z - b1)))) + (a2*np.exp(a2*(-z - b2)) / (1+np.exp(a2*(-z - b2))))
+    a1 = (z * np.exp(a1 * (z - b1))) / (1 + np.exp(a1 * (z - b1)))
+    a2 = (z * np.exp(a2 * (-z - b2))) / (1 + np.exp(a2 * (-z - b2)))
+    b1 = (-a1 * np.exp(a1 * (z - b1))) / (1 + np.exp(a1 * (z - b1)))
+    b2 = (a2 * np.exp(a2 * (-z - b2))) / (1 + np.exp(a2 * (-z - b2)))
+    return z, a1, a2, b1, b2
 
 
 def layer_initializer(num_layer, num_neuron, random_initializer):
@@ -58,7 +60,7 @@ def layer_initializer(num_layer, num_neuron, random_initializer):
     return weight, bias, d_weight, d_bias
 
 
-def forward_block(a_in, w, b, activation, alpha, beta):
+def forward_block(a_in, w, b, activation, a1, a2, b1, b2):
     z = np.dot(w, a_in) + b
 
     if activation == "sigmoid":
@@ -74,7 +76,7 @@ def forward_block(a_in, w, b, activation, alpha, beta):
         return a_out, z
 
     elif activation == 'my_activation':
-        a_out = my_activation(z, alpha, beta)
+        a_out = my_activation(z, a1, a2, b1, b2)
         return a_out, z
 
 
@@ -85,7 +87,7 @@ def cost_function(y_prediction, y_true):
     return cost
 
 
-def backward_block(da, z, w, a_prev, activation, alpha, beta):
+def backward_block(da, z, w, a_prev, activation, a1, a2, b1, b2):
     if activation == 'sigmoid':
         dz = da * sigmoid_backward(z)
     elif activation == "linear":
@@ -93,18 +95,24 @@ def backward_block(da, z, w, a_prev, activation, alpha, beta):
     elif activation == 'relu':
         dz = da * relu_backward(z)
     elif activation == 'my_activation':
-        [z, a, b] = my_activation_backward(z, alpha, beta)
+        [z,  a1, a2, b1, b2] = my_activation_backward(z, a1, a2, b1, b2)
         dz = da * z
-        d_alpha = da * z * a
-        d_beta = da * z * b
+        d_a1 = da * z * a1
+        d_a2 = da * z * a2
+        d_b1 = da * z * b1
+        d_b2 = da * z * b2
+
+        d_a1 = (1 / dz.shape[1]) * np.sum(d_a1, axis=1, keepdims=True)
+        d_a2 = (1 / dz.shape[1]) * np.sum(d_a2, axis=1, keepdims=True)
+        d_b1 = (1 / dz.shape[1]) * np.sum(d_b1, axis=1, keepdims=True)
+        d_b2 = (1 / dz.shape[1]) * np.sum(d_b2, axis=1, keepdims=True)
 
     dw = (1 / dz.shape[1]) * np.dot(dz, a_prev.T)
     db = (1 / dz.shape[1]) * np.sum(dz, axis=1, keepdims=True)
-    d_alpha = (1 / dz.shape[1]) * np.sum(d_alpha, axis=1, keepdims=True)
-    d_beta = (1 / dz.shape[1]) * np.sum(d_beta, axis=1, keepdims=True)
+
     da_prev = np.dot(w.T, dz)
 
-    return dw, db, da_prev, d_alpha, d_beta
+    return dw, db, da_prev, d_a1, d_a2, d_b1, d_b2
 
 
 def dropout(dropout_input, dropout_prob):

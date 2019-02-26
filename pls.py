@@ -9,6 +9,8 @@ import matplotlib.pylab as plt
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
 from mlp_mse import *
+from softplus_4variable import softplus_4variable
+from sklearn.preprocessing import normalize
 import keras
 from keras.layers import Dense
 from keras.models import Sequential
@@ -37,7 +39,6 @@ except FileNotFoundError:
 force = mat['Force_new_pre']
 force = -force
 lfp = mat['LFP_new_pre']
-
 fs = 1000
 num_channel = 16
 filter_degree = 4
@@ -124,8 +125,9 @@ for fold_count in range(num_fold):
     model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
     prediction = model.predict(feature_allband_test)
     """
-    [prediction, alpha, beta] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
-    prediction = prediction.T
+    [prediction_train, prediction_test, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
+    prediction_test = prediction_test.T
+    prediction_train = prediction_train.T
     #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
     #pls = PLSRegression(n_components=10)
     #pls.fit(feature_allband_train, force_train)
@@ -133,14 +135,33 @@ for fold_count in range(num_fold):
     #prediction = pls.predict(feature_allband_test)
 
     # Calculate scores
-    R2_score = LossR2(force_test, prediction)
-    Corr = LossCorr(force_test, prediction)
+    print("prediction for train")
+    R2_score = LossR2(force_train, prediction_train)
+    Corr = LossCorr(force_train, prediction_train)
+    print("=============================")
+    print("predictions for Train in fold ", fold_count + 1)
+    print("r2 score is ", R2_score)
+    print("Corrolation score is ", Corr)
+    print("Alpha and beta are ", a1, a2, b1, b2)
+    print("++++++++++++++++++++++++++++++++++++")
+
+    print("Prediction for Test")
+    R2_score = LossR2(force_test, prediction_test)
+    Corr = LossCorr(force_test, prediction_test)
     print("=============================")
     print("predictions for fold ", fold_count+1)
     print("r2 score is ", R2_score)
     print("Corrolation score is ", Corr)
-    print("Alpha and beta are ", alpha, beta)
+    print("Alpha and beta are ", a1, a2, b1, b2)
+
+    softplus_4variable(a1, a2, b1, b2)
+
+    plt.figure()
     plt.plot(force_test)
-    plt.plot(prediction)
+    plt.plot(prediction_test)
     plt.show()
+
+    plt.figure()
+    plt.plot(force_train)
+    plt.plot(prediction_train)
 

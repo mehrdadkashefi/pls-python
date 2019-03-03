@@ -22,13 +22,13 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     num_neuron = np.array([x_train.shape[0], y_train.shape[0]])
     learning_rate = 0.01
 
-    learning_rate_activation_a1 = 0.01
-    learning_rate_activation_a2 = 0.01
+    learning_rate_activation_a1 = 0
+    learning_rate_activation_a2 = 0
     learning_rate_activation_b1 = 0
     learning_rate_activation_b2 = 20
 
     random_initializer = 0.01
-    regularization_rate = 10000
+    regularization_rate = 5000
     num_iteration = 150
 
     a1 = 1
@@ -85,9 +85,9 @@ def mlp_mse(x_train, y_train, x_test, y_test):
         cost_validation[0, iteration] = cost_function(output['a1'], y_test)
         print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
 
-    [output_train, Z['z1']] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
+    [output_train, Z_train] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                             a2=a2, b1=b1, b2=b2)
-    [output_test, Z['z1']] = forward_block(x_test, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
+    [output_test, Z_test] = forward_block(x_test, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                            a2=a2, b1=b1, b2=b2)
     """"
     fig, ax = plt.subplots()
@@ -99,4 +99,4 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     ax.grid(False)
     plt.show()
    """
-    return output_train, output_test, a1, a2, b1, b2
+    return output_train, Z_train, output_test, Z_test, a1, a2, b1, b2

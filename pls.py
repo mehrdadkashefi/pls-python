@@ -125,7 +125,7 @@ for fold_count in range(num_fold):
     model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
     prediction = model.predict(feature_allband_test)
     """
-    [prediction_train, prediction_test, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
+    [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
     prediction_test = prediction_test.T
     prediction_train = prediction_train.T
     #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
@@ -157,11 +157,14 @@ for fold_count in range(num_fold):
     softplus_4variable(a1, a2, b1, b2)
 
     plt.figure()
-    plt.plot(force_test)
-    plt.plot(prediction_test)
+    t = np.linspace(0, 1, prediction_test_no_active.shape[1])
+    plt.plot(t, force_test, t, prediction_test, t, prediction_test_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+    plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
     plt.show()
 
     plt.figure()
-    plt.plot(force_train)
-    plt.plot(prediction_train)
+    t = np.linspace(0, 1, prediction_train_no_active.shape[1])
+    plt.plot(t, force_train, t, prediction_train, t, prediction_train_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+    plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
+    plt.show()
 

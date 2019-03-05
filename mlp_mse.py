@@ -24,12 +24,12 @@ def mlp_mse(x_train, y_train, x_test, y_test):
 
     learning_rate_activation_a1 = 0
     learning_rate_activation_a2 = 0
-    learning_rate_activation_b1 = 0
+    learning_rate_activation_b1 = 20
     learning_rate_activation_b2 = 20
 
     random_initializer = 0.01
-    regularization_rate = 5000
-    num_iteration = 150
+    regularization_rate = 800  # 800 5000
+    num_iteration = 1000       # 500
 
     a1 = 1
     a2 = 1
@@ -40,6 +40,15 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     cost = np.zeros((1, num_iteration))
     cost_validation = np.zeros((1, num_iteration))
 
+    # Initializing with pseudo inverse
+    x_init = x_train.T
+    x_train_init = np.concatenate((np.ones((x_init.shape[0], 1)), x_init), 1)
+    I = np.eye(x_train_init.shape[1])
+    I[:, 0] = 0
+    weight_init = np.dot(np.dot(np.linalg.pinv(np.dot(x_train_init.T, x_train_init) + regularization_rate * I),
+                         x_train_init.T), y_train.T)
+    weight['w1'] = weight_init[1:weight_init.shape[0], 0:1].T
+    bias['b1'] = weight_init[0:1, 0:1]
     # Main Loop of the program
     for iteration in range(num_iteration):
 
@@ -88,7 +97,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     [output_train, Z_train] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                             a2=a2, b1=b1, b2=b2)
     [output_test, Z_test] = forward_block(x_test, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
-                                           a2=a2, b1=b1, b2=b2)
+                                          a2=a2, b1=b1, b2=b2)
     """"
     fig, ax = plt.subplots()
     ax.plot(range(0, iteration), cost[0, 0:iteration], label='Train Cost')

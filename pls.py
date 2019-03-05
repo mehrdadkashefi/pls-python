@@ -136,7 +136,7 @@ for fold_count in range(num_fold):
 
     # Calculate scores
     print("prediction for train")
-    R2_score = LossR2(force_train, prediction_train)
+    R2_score = 1 - LossR2(force_train, prediction_train)
     Corr = LossCorr(force_train, prediction_train)
     print("=============================")
     print("predictions for Train in fold ", fold_count + 1)
@@ -146,7 +146,7 @@ for fold_count in range(num_fold):
     print("++++++++++++++++++++++++++++++++++++")
 
     print("Prediction for Test")
-    R2_score = LossR2(force_test, prediction_test)
+    R2_score = 1 - LossR2(force_test, prediction_test)
     Corr = LossCorr(force_test, prediction_test)
     print("=============================")
     print("predictions for fold ", fold_count+1)

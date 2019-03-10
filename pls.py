@@ -45,6 +45,7 @@ filter_degree = 4
 downsample_rate = int(np.round(fs/10))
 lag = 10
 num_fold = 10
+plot_cont = 0
 
 # Shuffling trials
 # index = np.random.permutation(lfp.shape[2])  # Num trials ~ 74
@@ -104,6 +105,12 @@ force = np.delete(force, range(lag))
 fold = np.round(np.linspace(0, feature_allband.shape[0], num_fold+1), )
 kfold_index = range(feature_allband.shape[0])
 
+fold_r2_test = np.zeros((1, num_fold))
+fold_r_test = np.zeros((1, num_fold))
+
+fold_r2_train = np.zeros((1, num_fold))
+fold_r_train = np.zeros((1, num_fold))
+
 for fold_count in range(num_fold):
 
     index_train = kfold_index
@@ -138,6 +145,8 @@ for fold_count in range(num_fold):
     print("prediction for train")
     R2_score = 1 - LossR2(force_train, prediction_train)
     Corr = LossCorr(force_train, prediction_train)
+    fold_r2_train[0, fold_count] = R2_score
+    fold_r_train[0, fold_count] = Corr
     print("=============================")
     print("predictions for Train in fold ", fold_count + 1)
     print("r2 score is ", R2_score)
@@ -148,23 +157,40 @@ for fold_count in range(num_fold):
     print("Prediction for Test")
     R2_score = 1 - LossR2(force_test, prediction_test)
     Corr = LossCorr(force_test, prediction_test)
+    fold_r2_test[0, fold_count] = R2_score
+    fold_r_test[0, fold_count] = Corr
     print("=============================")
     print("predictions for fold ", fold_count+1)
     print("r2 score is ", R2_score)
     print("Corrolation score is ", Corr)
     print("Alpha and beta are ", a1, a2, b1, b2)
 
-    softplus_4variable(a1, a2, b1, b2)
+    if plot_cont == 1:
+        softplus_4variable(a1, a2, b1, b2)
 
-    plt.figure()
-    t = np.linspace(0, 1, prediction_test_no_active.shape[1])
-    plt.plot(t, force_test, t, prediction_test, t, prediction_test_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
-    plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
-    plt.show()
+        plt.figure()
+        t = np.linspace(0, 1, prediction_test_no_active.shape[1])
+        plt.plot(t, force_test, t, prediction_test, t, prediction_test_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+        plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
+        plt.show()
 
-    plt.figure()
-    t = np.linspace(0, 1, prediction_train_no_active.shape[1])
-    plt.plot(t, force_train, t, prediction_train, t, prediction_train_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
-    plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
-    plt.show()
+        plt.figure()
+        t = np.linspace(0, 1, prediction_train_no_active.shape[1])
+        plt.plot(t, force_train, t, prediction_train, t, prediction_train_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+        plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
+        plt.show()
+print('===========================================')
+print('===========================================')
+print('========Average for all 10 folds===========')
+print('===========================================')
+print('Train Average R2 Value ', fold_r2_train)
+print(' Average ', np.mean(fold_r2_train))
+print('Train Average Corr Value ', fold_r_train)
+print('Average ', np.mean(fold_r_train))
+print('Test Average R2 Value ', fold_r2_test)
+print('Average ', np.mean(fold_r2_test))
+print('Test Average Corr Value ', fold_r_test)
+print('Average ', np.mean(fold_r_test))
+
+
 

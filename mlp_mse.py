@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def mlp_mse(x_train, y_train, x_test, y_test):
+def mlp_mse(x_train, y_train, x_test, y_test, regularization):
     y_train = np.reshape(y_train, (len(y_train), 1))
     y_test = np.reshape(y_test, (len(y_test), 1))
 
@@ -28,8 +28,8 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     learning_rate_activation_b2 = 20
 
     random_initializer = 0.01
-    regularization_rate = 1000  # 800 5000
-    num_iteration = 500       # 500
+    regularization_rate = regularization
+    num_iteration = 100       # 500
 
     a1 = 1
     a2 = 1

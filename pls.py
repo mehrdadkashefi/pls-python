@@ -111,86 +111,96 @@ fold_r_test = np.zeros((1, num_fold))
 fold_r2_train = np.zeros((1, num_fold))
 fold_r_train = np.zeros((1, num_fold))
 
-for fold_count in range(num_fold):
+reg_lambda = np.linspace(0, 10000, 100)
+lambda_grid = np.zeros((len(reg_lambda), num_fold))
 
-    index_train = kfold_index
-    index_test = range(int(fold[fold_count]), int(fold[fold_count + 1]))
-    index_train = np.delete(index_train, index_test)
-    # Feature train-test separation
-    feature_allband_train = feature_allband[index_train, :]
-    feature_allband_test = feature_allband[index_test, :]
-    # force train-test separation
-    force_train = force[index_train]
-    force_test = force[index_test]
-    """"
-    model = Sequential()
-    model.add(Dense(1, activation='relu',use_bias=True, input_dim=1408,kernel_regularizer=l2(0.001)))
-    model.compile(optimizer='adam',
-                  loss='mean_absolute_error')
+for reg_val in range(len(reg_lambda)):
+    for fold_count in range(num_fold):
 
-    # Train the model, iterating on the data in batches of 32 samples
-    model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
-    prediction = model.predict(feature_allband_test)
-    """
-    [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
-    prediction_test = prediction_test.T
-    prediction_train = prediction_train.T
-    #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
-    #pls = PLSRegression(n_components=10)
-    #pls.fit(feature_allband_train, force_train)
+        index_train = kfold_index
+        index_test = range(int(fold[fold_count]), int(fold[fold_count + 1]))
+        index_train = np.delete(index_train, index_test)
+        # Feature train-test separation
+        feature_allband_train = feature_allband[index_train, :]
+        feature_allband_test = feature_allband[index_test, :]
+        # force train-test separation
+        force_train = force[index_train]
+        force_test = force[index_test]
+        """"
+        model = Sequential()
+        model.add(Dense(1, activation='relu',use_bias=True, input_dim=1408,kernel_regularizer=l2(0.001)))
+        model.compile(optimizer='adam',
+                      loss='mean_absolute_error')
+    
+        # Train the model, iterating on the data in batches of 32 samples
+        model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
+        prediction = model.predict(feature_allband_test)
+        """
+        [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test, reg_lambda[reg_val])
+        prediction_test = prediction_test.T
+        prediction_train = prediction_train.T
+        #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
+        #pls = PLSRegression(n_components=10)
+        #pls.fit(feature_allband_train, force_train)
 
-    #prediction = pls.predict(feature_allband_test)
+        #prediction = pls.predict(feature_allband_test)
 
-    # Calculate scores
-    print("prediction for train")
-    R2_score = 1 - LossR2(force_train, prediction_train)
-    Corr = LossCorr(force_train, prediction_train)
-    fold_r2_train[0, fold_count] = R2_score
-    fold_r_train[0, fold_count] = Corr
-    print("=============================")
-    print("predictions for Train in fold ", fold_count + 1)
-    print("r2 score is ", R2_score)
-    print("Corrolation score is ", Corr)
-    print("Alpha and beta are ", a1, a2, b1, b2)
-    print("++++++++++++++++++++++++++++++++++++")
+        # Calculate scores
+        print("prediction for train")
+        R2_score = 1 - LossR2(force_train, prediction_train)
+        Corr = LossCorr(force_train, prediction_train)
+        fold_r2_train[0, fold_count] = R2_score
+        fold_r_train[0, fold_count] = Corr
+        print("=============================")
+        print("predictions for Train in fold ", fold_count + 1)
+        print("r2 score is ", R2_score)
+        print("Corrolation score is ", Corr)
+        print("Alpha and beta are ", a1, a2, b1, b2)
+        print("++++++++++++++++++++++++++++++++++++")
 
-    print("Prediction for Test")
-    R2_score = 1 - LossR2(force_test, prediction_test)
-    Corr = LossCorr(force_test, prediction_test)
-    fold_r2_test[0, fold_count] = R2_score
-    fold_r_test[0, fold_count] = Corr
-    print("=============================")
-    print("predictions for fold ", fold_count+1)
-    print("r2 score is ", R2_score)
-    print("Corrolation score is ", Corr)
-    print("Alpha and beta are ", a1, a2, b1, b2)
+        print("Prediction for Test")
+        R2_score = 1 - LossR2(force_test, prediction_test)
+        Corr = LossCorr(force_test, prediction_test)
+        fold_r2_test[0, fold_count] = R2_score
+        fold_r_test[0, fold_count] = Corr
+        print("=============================")
+        print("predictions for fold ", fold_count+1)
+        print("r2 score is ", R2_score)
+        print("Corrolation score is ", Corr)
+        print("Alpha and beta are ", a1, a2, b1, b2)
 
-    if plot_cont == 1:
-        softplus_4variable(a1, a2, b1, b2)
+        if plot_cont == 1:
+            softplus_4variable(a1, a2, b1, b2)
 
-        plt.figure()
-        t = np.linspace(0, 1, prediction_test_no_active.shape[1])
-        plt.plot(t, force_test, t, prediction_test, t, prediction_test_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
-        plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
-        plt.show()
+            plt.figure()
+            t = np.linspace(0, 1, prediction_test_no_active.shape[1])
+            plt.plot(t, force_test, t, prediction_test, t, prediction_test_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+            plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
+            plt.show()
 
-        plt.figure()
-        t = np.linspace(0, 1, prediction_train_no_active.shape[1])
-        plt.plot(t, force_train, t, prediction_train, t, prediction_train_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
-        plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
-        plt.show()
-print('===========================================')
-print('===========================================')
-print('========Average for all 10 folds===========')
-print('===========================================')
-print('Train Average R2 Value ', fold_r2_train)
-print(' Average ', np.mean(fold_r2_train))
-print('Train Average Corr Value ', fold_r_train)
-print('Average ', np.mean(fold_r_train))
-print('Test Average R2 Value ', fold_r2_test)
-print('Average ', np.mean(fold_r2_test))
-print('Test Average Corr Value ', fold_r_test)
-print('Average ', np.mean(fold_r_test))
+            plt.figure()
+            t = np.linspace(0, 1, prediction_train_no_active.shape[1])
+            plt.plot(t, force_train, t, prediction_train, t, prediction_train_no_active.T, t, -b2*np.ones((t.shape[0], 1)))
+            plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
+            plt.show()
+
+        lambda_grid[int(reg_val), fold_count] = np.mean(fold_r2_test)
+        np.savetxt("grid.csv", lambda_grid, delimiter=",")
+
+    print('===========================================')
+    print('===========================================')
+    print('========Average for all 10 folds===========')
+    print('===========================================')
+    print('Regvalue is ', reg_lambda[reg_val], ' Mear r2 Test ', np.mean(fold_r2_test), 'Mean r Test ', np.mean(fold_r_test))
+    print('===========================================')
+    print('Train Average R2 Value ', fold_r2_train)
+    print(' Average ', np.mean(fold_r2_train))
+    print('Train Average Corr Value ', fold_r_train)
+    print('Average ', np.mean(fold_r_train))
+    print('Test Average R2 Value ', fold_r2_test)
+    print('Average ', np.mean(fold_r2_test))
+    print('Test Average Corr Value ', fold_r_test)
+    print('Average ', np.mean(fold_r_test))
 
 
 

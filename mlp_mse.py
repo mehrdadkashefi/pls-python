@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def mlp_mse(x_train, y_train, x_test, y_test):
+def mlp_mse(x_train, y_train, x_test, y_test, reg_val):
     y_train = np.reshape(y_train, (len(y_train), 1))
     y_test = np.reshape(y_test, (len(y_test), 1))
 
@@ -28,7 +28,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     learning_rate_activation_b2 = 20
 
     random_initializer = 0.01
-    regularization_rate = 1000  # 800 5000
+    regularization_rate = reg_val  # 800 5000
     num_iteration = 500       # 500
 
     a1 = 1
@@ -82,7 +82,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
         b2 = b2 - (learning_rate_activation_b2 * d_b2)
 
         cost[0, iteration] = cost_function(output['a1'], y_train)
-        print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
+        # print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
 
         # Validation on Test Set
 
@@ -92,7 +92,7 @@ def mlp_mse(x_train, y_train, x_test, y_test):
                                                 a1=a1, a2=a2, b1=b1, b2=b2)
 
         cost_validation[0, iteration] = cost_function(output['a1'], y_test)
-        print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
+        # print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
 
     [output_train, Z_train] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                             a2=a2, b1=b1, b2=b2)

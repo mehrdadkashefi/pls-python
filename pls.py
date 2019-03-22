@@ -45,6 +45,7 @@ filter_degree = 4
 downsample_rate = int(np.round(fs/10))
 lag = 10
 num_fold = 10
+validation_ratio = 0.2
 plot_cont = 0
 
 # Shuffling trials
@@ -108,11 +109,15 @@ kfold_index = range(feature_allband.shape[0])
 fold_r2_test = np.zeros((1, num_fold))
 fold_r_test = np.zeros((1, num_fold))
 
+fold_r2_val = np.zeros((1, num_fold))
+fold_r_val = np.zeros((1, num_fold))
+
 fold_r2_train = np.zeros((1, num_fold))
 fold_r_train = np.zeros((1, num_fold))
 
 reg_lambda = np.linspace(0, 10000, 100)
-lambda_grid = np.zeros((len(reg_lambda), num_fold))
+lambda_grid_test = np.zeros((len(reg_lambda), num_fold))
+lambda_grid_val = np.zeros((len(reg_lambda), num_fold))
 
 for reg_val in range(len(reg_lambda)):
     for fold_count in range(num_fold):
@@ -120,11 +125,15 @@ for reg_val in range(len(reg_lambda)):
         index_train = kfold_index
         index_test = range(int(fold[fold_count]), int(fold[fold_count + 1]))
         index_train = np.delete(index_train, index_test)
+        index_val = index_train[-1-np.int(validation_ratio * index_train.size):-1]
+        index_train = np.delete(index_train, index_val)
         # Feature train-test separation
         feature_allband_train = feature_allband[index_train, :]
+        feature_allband_val = feature_allband[index_val, :]
         feature_allband_test = feature_allband[index_test, :]
         # force train-test separation
         force_train = force[index_train]
+        force_val = force[index_val]
         force_test = force[index_test]
         """"
         model = Sequential()
@@ -136,8 +145,9 @@ for reg_val in range(len(reg_lambda)):
         model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
         prediction = model.predict(feature_allband_test)
         """
-        [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test, reg_lambda[reg_val])
+        [prediction_train, prediction_train_no_active,  prediction_val, prediction_val_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_val, force_val, feature_allband_test, force_test, reg_lambda[reg_val])
         prediction_test = prediction_test.T
+        prediction_val = prediction_val.T
         prediction_train = prediction_train.T
         #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
         #pls = PLSRegression(n_components=10)
@@ -158,6 +168,22 @@ for reg_val in range(len(reg_lambda)):
         print("Alpha and beta are ", a1, a2, b1, b2)
         print("++++++++++++++++++++++++++++++++++++")
 
+        # Calculate scores
+        print("prediction for Validation")
+        R2_score = 1 - LossR2(force_val, prediction_val)
+        Corr = LossCorr(force_val, prediction_val)
+        fold_r2_val[0, fold_count] = R2_score
+        fold_r_val[0, fold_count] = Corr
+        print("=============================")
+        print("predictions for validation in fold ", fold_count + 1)
+        print("r2 score is ", R2_score)
+        print("Corrolation score is ", Corr)
+        print("Alpha and beta are ", a1, a2, b1, b2)
+        print("++++++++++++++++++++++++++++++++++++")
+        lambda_grid_val[int(reg_val), fold_count] = R2_score
+        np.savetxt("grid_val.csv", lambda_grid_val, delimiter=",")
+
+
         print("Prediction for Test")
         R2_score = 1 - LossR2(force_test, prediction_test)
         Corr = LossCorr(force_test, prediction_test)
@@ -168,6 +194,10 @@ for reg_val in range(len(reg_lambda)):
         print("r2 score is ", R2_score)
         print("Corrolation score is ", Corr)
         print("Alpha and beta are ", a1, a2, b1, b2)
+
+        lambda_grid_test[int(reg_val), fold_count] = R2_score
+        np.savetxt("grid_test.csv", lambda_grid_test, delimiter=",")
+
 
         if plot_cont == 1:
             softplus_4variable(a1, a2, b1, b2)
@@ -184,9 +214,6 @@ for reg_val in range(len(reg_lambda)):
             plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
             plt.show()
 
-        lambda_grid[int(reg_val), fold_count] = R2_score
-        np.savetxt("grid.csv", lambda_grid, delimiter=",")
-
     print('===========================================')
     print('===========================================')
     print('========Average for all 10 folds===========')
@@ -197,6 +224,12 @@ for reg_val in range(len(reg_lambda)):
     print(' Average ', np.mean(fold_r2_train))
     print('Train Average Corr Value ', fold_r_train)
     print('Average ', np.mean(fold_r_train))
+    print('******')
+    print('Validation Average R2 Value ', fold_r2_val)
+    print('Average ', np.mean(fold_r2_val))
+    print('Validation Average Corr Value ', fold_r_val)
+    print('Average ', np.mean(fold_r_val))
+    print('******')
     print('Test Average R2 Value ', fold_r2_test)
     print('Average ', np.mean(fold_r2_test))
     print('Test Average Corr Value ', fold_r_test)

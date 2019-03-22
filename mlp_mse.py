@@ -8,13 +8,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def mlp_mse(x_train, y_train, x_test, y_test, reg_val):
+def mlp_mse(x_train, y_train, x_val, y_val, x_test, y_test, reg_val):
     y_train = np.reshape(y_train, (len(y_train), 1))
     y_test = np.reshape(y_test, (len(y_test), 1))
 
     # Transposing Data to standard NN shape Matrix are in form of (Features x num_samples)
     x_train = x_train.T
     y_train = y_train.T
+
+    x_val = x_val.T
+    y_val = y_val.T
+
     x_test = x_test.T
     y_test = y_test.T
 
@@ -96,6 +100,10 @@ def mlp_mse(x_train, y_train, x_test, y_test, reg_val):
 
     [output_train, Z_train] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                             a2=a2, b1=b1, b2=b2)
+
+    [output_val, Z_val] = forward_block(x_val, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
+                                            a2=a2, b1=b1, b2=b2)
+
     [output_test, Z_test] = forward_block(x_test, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                           a2=a2, b1=b1, b2=b2)
     """"
@@ -108,4 +116,4 @@ def mlp_mse(x_train, y_train, x_test, y_test, reg_val):
     ax.grid(False)
     plt.show()
    """
-    return output_train, Z_train, output_test, Z_test, a1, a2, b1, b2
+    return output_train, Z_train, output_val, Z_val, output_test, Z_test, a1, a2, b1, b2

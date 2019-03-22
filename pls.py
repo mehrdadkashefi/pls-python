@@ -184,7 +184,7 @@ for reg_val in range(len(reg_lambda)):
             plt.legend(['True Value', 'prediction', 'prediction not activation', 'Low Threshold'])
             plt.show()
 
-        lambda_grid[int(reg_val), fold_count] = np.mean(fold_r2_test)
+        lambda_grid[int(reg_val), fold_count] = R2_score
         np.savetxt("grid.csv", lambda_grid, delimiter=",")
 
     print('===========================================')

@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pylab as plt
 import scipy.signal as sig
 from sklearn.cross_decomposition import PLSRegression
-from mlp_mse import *
+from mlp_mse import mlp_mse
 from softplus_4variable import softplus_4variable
 from sklearn.preprocessing import normalize
 import keras
@@ -105,11 +105,21 @@ force = np.delete(force, range(lag))
 fold = np.round(np.linspace(0, feature_allband.shape[0], num_fold+1), )
 kfold_index = range(feature_allband.shape[0])
 
+# Network Results
 fold_r2_test = np.zeros((1, num_fold))
 fold_r_test = np.zeros((1, num_fold))
 
 fold_r2_train = np.zeros((1, num_fold))
 fold_r_train = np.zeros((1, num_fold))
+
+# PLS Results
+
+fold_r2_test_pls = np.zeros((1, num_fold))
+fold_r_test_pls = np.zeros((1, num_fold))
+
+fold_r2_train_pls = np.zeros((1, num_fold))
+fold_r_train_pls = np.zeros((1, num_fold))
+
 
 for fold_count in range(num_fold):
 
@@ -136,35 +146,34 @@ for fold_count in range(num_fold):
     prediction_test = prediction_test.T
     prediction_train = prediction_train.T
     #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
-    #pls = PLSRegression(n_components=10)
-    #pls.fit(feature_allband_train, force_train)
+    pls = PLSRegression(n_components=10)
+    pls.fit(feature_allband_train, force_train)
 
-    #prediction = pls.predict(feature_allband_test)
+    prediction_pls = pls.predict(feature_allband_test)
 
     # Calculate scores
-    print("prediction for train")
     R2_score = 1 - LossR2(force_train, prediction_train)
     Corr = LossCorr(force_train, prediction_train)
     fold_r2_train[0, fold_count] = R2_score
     fold_r_train[0, fold_count] = Corr
-    print("=============================")
-    print("predictions for Train in fold ", fold_count + 1)
-    print("r2 score is ", R2_score)
-    print("Corrolation score is ", Corr)
-    print("Alpha and beta are ", a1, a2, b1, b2)
-    print("++++++++++++++++++++++++++++++++++++")
-
-    print("Prediction for Test")
+    
+    
     R2_score = 1 - LossR2(force_test, prediction_test)
     Corr = LossCorr(force_test, prediction_test)
     fold_r2_test[0, fold_count] = R2_score
     fold_r_test[0, fold_count] = Corr
+    
+    
+    R2_score = 1 - LossR2(force_test, prediction_pls)
+    Corr = LossCorr(force_test, prediction_pls)
+    fold_r2_test_pls[0, fold_count] = R2_score
+    fold_r_test_pls[0, fold_count] = Corr
+    
     print("=============================")
-    print("predictions for fold ", fold_count+1)
-    print("r2 score is ", R2_score)
-    print("Corrolation score is ", Corr)
-    print("Alpha and beta are ", a1, a2, b1, b2)
-
+    print("predictions for in fold ", fold_count + 1)
+    print("r2 score: Net Train:", fold_r2_train[0, fold_count], 'Net Test: ',fold_r2_test[0, fold_count],' PLS: ',fold_r2_test_pls[0, fold_count])
+    print("r score: Net Train:",fold_r_train[0, fold_count], 'Net Test: ',fold_r_test[0, fold_count], ' PLS: ',fold_r_test_pls[0, fold_count])
+    
     if plot_cont == 1:
         softplus_4variable(a1, a2, b1, b2)
 
@@ -183,14 +192,8 @@ print('===========================================')
 print('===========================================')
 print('========Average for all 10 folds===========')
 print('===========================================')
-print('Train Average R2 Value ', fold_r2_train)
-print(' Average ', np.mean(fold_r2_train))
-print('Train Average Corr Value ', fold_r_train)
-print('Average ', np.mean(fold_r_train))
-print('Test Average R2 Value ', fold_r2_test)
-print('Average ', np.mean(fold_r2_test))
-print('Test Average Corr Value ', fold_r_test)
-print('Average ', np.mean(fold_r_test))
+print('Fold R2: Net Train ',np.mean(fold_r2_train),' Net Test: ',np.mean(fold_r2_test),'PLS Test: ',np.mean(fold_r2_test_pls))
+print('Fold R: Net Train ',np.mean(fold_r_train),' Net Test: ',np.mean(fold_r_test),'PLS Test: ',np.mean(fold_r_test_pls))
 
 
 

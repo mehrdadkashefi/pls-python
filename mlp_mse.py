@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 
 
 def mlp_mse(x_train, y_train, x_test, y_test):
+    # Function controls
+    # Printing Itterations control
+    prnt_cont = 0
+    
     y_train = np.reshape(y_train, (len(y_train), 1))
     y_test = np.reshape(y_test, (len(y_test), 1))
 
@@ -33,8 +37,8 @@ def mlp_mse(x_train, y_train, x_test, y_test):
 
     a1 = 1
     a2 = 1
-    b1 = 0
-    b2 = 0
+    b1 = 10
+    b2 = 10
 
     [weight, bias, dW, dB] = layer_initializer(num_layer, num_neuron, random_initializer)
     cost = np.zeros((1, num_iteration))
@@ -82,7 +86,6 @@ def mlp_mse(x_train, y_train, x_test, y_test):
         b2 = b2 - (learning_rate_activation_b2 * d_b2)
 
         cost[0, iteration] = cost_function(output['a1'], y_train)
-        print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
 
         # Validation on Test Set
 
@@ -92,12 +95,18 @@ def mlp_mse(x_train, y_train, x_test, y_test):
                                                 a1=a1, a2=a2, b1=b1, b2=b2)
 
         cost_validation[0, iteration] = cost_function(output['a1'], y_test)
-        print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
+        if prnt_cont == 1:
+            print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
+            print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
 
     [output_train, Z_train] = forward_block(x_train, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                             a2=a2, b1=b1, b2=b2)
     [output_test, Z_test] = forward_block(x_test, weight['w1'], bias['b1'], activation='my_activation', a1=a1,
                                           a2=a2, b1=b1, b2=b2)
+    
+    print("In Iteration ", iteration, " The cost is ", cost[0, iteration])
+    print("In Iteration ", iteration, " The test cost is ", cost_validation[0, iteration])
+            
     """"
     fig, ax = plt.subplots()
     ax.plot(range(0, iteration), cost[0, 0:iteration], label='Train Cost')

@@ -120,6 +120,12 @@ fold_r_test_pls = np.zeros((1, num_fold))
 fold_r2_train_pls = np.zeros((1, num_fold))
 fold_r_train_pls = np.zeros((1, num_fold))
 
+# Rig Regression Results
+
+fold_r2_test_rig = np.zeros((1, num_fold))
+fold_r_test_rig = np.zeros((1, num_fold))
+
+
 
 for fold_count in range(num_fold):
 
@@ -142,9 +148,10 @@ for fold_count in range(num_fold):
     model.fit(feature_allband_train, force_train, verbose=0, epochs=50, batch_size=None)
     prediction = model.predict(feature_allband_test)
     """
-    [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
+    [prediction_train, prediction_train_no_active, prediction_test, prediction_test_no_active, rig_prediction, a1, a2, b1, b2] = mlp_mse(feature_allband_train, force_train, feature_allband_test, force_test)
     prediction_test = prediction_test.T
     prediction_train = prediction_train.T
+    rig_prediction = rig_prediction.T
     #MyMLP(feature_allband_train, force_train, feature_allband_test, force_test)
     pls = PLSRegression(n_components=10)
     pls.fit(feature_allband_train, force_train)
@@ -168,11 +175,17 @@ for fold_count in range(num_fold):
     Corr = LossCorr(force_test, prediction_pls)
     fold_r2_test_pls[0, fold_count] = R2_score
     fold_r_test_pls[0, fold_count] = Corr
-    
+
+    R2_score = 1 - LossR2(force_test, rig_prediction)
+    Corr = LossCorr(force_test, rig_prediction)
+    fold_r2_test_rig[0, fold_count] = R2_score
+    fold_r_test_rig[0, fold_count] = Corr
+
+
     print("=============================")
     print("predictions for in fold ", fold_count + 1)
-    print("r2 score: Net Train:", fold_r2_train[0, fold_count], 'Net Test: ',fold_r2_test[0, fold_count],' PLS: ',fold_r2_test_pls[0, fold_count])
-    print("r score: Net Train:",fold_r_train[0, fold_count], 'Net Test: ',fold_r_test[0, fold_count], ' PLS: ',fold_r_test_pls[0, fold_count])
+    print("r2 score: Net Train:", fold_r2_train[0, fold_count], 'Net Test: ',fold_r2_test[0, fold_count],' PLS: ',fold_r2_test_pls[0, fold_count],' Ridge: ',fold_r2_test_rig[0, fold_count])
+    print("r score: Net Train:",fold_r_train[0, fold_count], 'Net Test: ',fold_r_test[0, fold_count], ' PLS: ',fold_r_test_pls[0, fold_count],' Ridge: ',fold_r_test_rig[0, fold_count])
     
     if plot_cont == 1:
         softplus_4variable(a1, a2, b1, b2)
@@ -192,8 +205,5 @@ print('===========================================')
 print('===========================================')
 print('========Average for all 10 folds===========')
 print('===========================================')
-print('Fold R2: Net Train ',np.mean(fold_r2_train),' Net Test: ',np.mean(fold_r2_test),'PLS Test: ',np.mean(fold_r2_test_pls))
-print('Fold R: Net Train ',np.mean(fold_r_train),' Net Test: ',np.mean(fold_r_test),'PLS Test: ',np.mean(fold_r_test_pls))
-
-
-
+print('Fold R2: Net Train ', np.mean(fold_r2_train), ' Net Test: ', np.mean(fold_r2_test), 'PLS Test: ', np.mean(fold_r2_test_pls),'Ridge Test: ', np.mean(fold_r2_test_rig))
+print('Fold R: Net Train ', np.mean(fold_r_train), ' Net Test: ', np.mean(fold_r_test), 'PLS Test: ', np.mean(fold_r_test_pls),'Ridge Test: ', np.mean(fold_r_test_rig))

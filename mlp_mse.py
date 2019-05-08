@@ -51,6 +51,9 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     I[:, 0] = 0
     weight_init = np.dot(np.dot(np.linalg.pinv(np.dot(x_train_init.T, x_train_init) + regularization_rate * I),
                          x_train_init.T), y_train.T)
+
+    rig_prediction = np.dot(weight_init.T, np.concatenate((np.ones((1, x_test.shape[1])), x_test)))
+
     weight['w1'] = weight_init[1:weight_init.shape[0], 0:1].T
     bias['b1'] = weight_init[0:1, 0:1]
     # Main Loop of the program
@@ -117,4 +120,4 @@ def mlp_mse(x_train, y_train, x_test, y_test):
     ax.grid(False)
     plt.show()
    """
-    return output_train, Z_train, output_test, Z_test, a1, a2, b1, b2
+    return output_train, Z_train, output_test, Z_test, rig_prediction, a1, a2, b1, b2
